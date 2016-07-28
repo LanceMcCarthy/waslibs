@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using AppStudio.DataProviders.Bing;
 using AppStudio.DataProviders.Exceptions;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using System;
 
 namespace AppStudio.DataProviders.Test.DataProviders
 {
@@ -23,7 +24,7 @@ namespace AppStudio.DataProviders.Test.DataProviders
             IEnumerable<BingSchema> data = await dataProvider.LoadDataAsync(config);
 
             Assert.IsNotNull(data);
-            Assert.AreNotEqual(data.Count(), 0);
+            Assert.AreNotEqual(data.Count(), 0);           
         }
 
         [TestMethod]
@@ -55,12 +56,11 @@ namespace AppStudio.DataProviders.Test.DataProviders
             var dataProvider = new BingDataProvider();
 
             await ExceptionsAssert.ThrowsAsync<ParserNullException>(async () => await dataProvider.LoadDataAsync<BingSchema>(new BingDataConfig(), 20, null));
-        }
-
+        }      
+       
         [TestMethod]
-        public async Task TestMaxRecords_Min()
+        public async Task LoadPaginationBing()
         {
-            int maxRecords = 1;
             var config = new BingDataConfig
             {
                 Query = "Windows App Studio",
@@ -68,25 +68,28 @@ namespace AppStudio.DataProviders.Test.DataProviders
             };
 
             var dataProvider = new BingDataProvider();
-            IEnumerable<BingSchema> data = await dataProvider.LoadDataAsync(config, maxRecords);
+            await dataProvider.LoadDataAsync(config, 20);
 
-            Assert.AreEqual(maxRecords, data.Count());
+            Assert.IsTrue(dataProvider.HasMoreItems);
+
+            IEnumerable<BingSchema> result = await dataProvider.LoadMoreDataAsync();
+
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result.Any());
         }
 
         [TestMethod]
-        public async Task TestMaxRecords()
+        public async Task LoadMoreDataInvalidOperationBing()
         {
-            int maxRecords = 50;
             var config = new BingDataConfig
             {
-                Query = "Microsoft",
+                Query = "Windows App Studio",
                 Country = BingCountry.UnitedStates
             };
 
-            var dataProvider = new BingDataProvider();
-            IEnumerable<BingSchema> data = await dataProvider.LoadDataAsync(config, maxRecords);
+            var dataProvider = new BingDataProvider();          
+            InvalidOperationException exception = await ExceptionsAssert.ThrowsAsync<InvalidOperationException>(async () => await dataProvider.LoadMoreDataAsync());
 
-            Assert.IsTrue(data.Count() > 20);
         }
     }
 }

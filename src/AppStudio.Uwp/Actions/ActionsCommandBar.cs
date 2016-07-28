@@ -2,10 +2,12 @@
 using System.Linq;
 using Windows.ApplicationModel.Resources;
 using Windows.Graphics.Display;
+using Windows.UI;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Automation;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
+using Windows.UI.Xaml.Media;
 
 namespace AppStudio.Uwp.Actions
 {
@@ -86,24 +88,41 @@ namespace AppStudio.Uwp.Actions
                         {
                             control.SecondaryCommands.Add(button);
                         }
-                    }
+                    }                    
                     button.Command = action.Command;
                     button.CommandParameter = action.CommandParameter;
                     button.Label = label;
                     AutomationProperties.SetName(button, automationPropertiesName);
                     if (!string.IsNullOrEmpty(label))
                     {
-                        ToolTipService.SetToolTip(button, label);
+                        ToolTipService.SetToolTip(button, GetTooltip(label));
                         ToolTipService.SetPlacement(button, PlacementMode.Mouse);
                     }
                     if (Application.Current.Resources.ContainsKey(action.Style))
                     {
                         button.Style = Application.Current.Resources[action.Style] as Style;
                     }
-
+                    if (button.Command?.CanExecute(button?.CommandParameter) == true)
+                    {
+                        button.Visibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        button.Visibility = Visibility.Collapsed;
+                    }
                 }
             }
         }
+
+        private static TextBlock GetTooltip(string label)
+        {
+            return new TextBlock()
+            {
+                Text = label,
+                Foreground = new SolidColorBrush((Color)Application.Current.Resources["SystemBaseHighColor"])
+            };
+        }
+
         private enum ActionTextProperties { Label, AutomationPropertiesName };
         private static string GetText(ActionInfo action, ActionTextProperties property)
         {

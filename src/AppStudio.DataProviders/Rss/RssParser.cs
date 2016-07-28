@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -61,7 +62,7 @@ namespace AppStudio.DataProviders.Rss
         /// </summary>
         /// <param name="doc"></param>
         /// <returns></returns>
-        public abstract IEnumerable<RssSchema> LoadFeed(XDocument doc);
+        public abstract IEnumerable<RssSchema> LoadFeed(XDocument doc);        
 
         internal protected static string ProcessHtmlContent(string htmlContent)
         {
@@ -72,7 +73,7 @@ namespace AppStudio.DataProviders.Rss
         {
             return htmlContent.DecodeHtml().Trim().Truncate(500).SanitizeString();
         }
-    }
+    }   
 
     /// <summary>
     /// Rss reader implementation to parse Rss content.
@@ -82,6 +83,7 @@ namespace AppStudio.DataProviders.Rss
         private static readonly XNamespace NsRdfNamespaceUri = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
         private static readonly XNamespace NsRdfElementsNamespaceUri = "http://purl.org/dc/elements/1.1/";
         private static readonly XNamespace NsRdfContentNamespaceUri = "http://purl.org/rss/1.0/modules/content/";
+        private static readonly XNamespace NsYandexContentNamespaceUri = "http://news.yandex.ru";
 
         /// <summary>
         /// THis override load and parses the document and return a list of RssSchema values.
@@ -91,7 +93,7 @@ namespace AppStudio.DataProviders.Rss
         public override IEnumerable<RssSchema> LoadFeed(XDocument doc)
         {
             bool isRDF = false;
-            var feed = new Collection<RssSchema>();
+            Collection<RssSchema> feed = new Collection<RssSchema>();
             XNamespace defaultNamespace = string.Empty;
 
             if (doc.Root != null)
@@ -124,10 +126,14 @@ namespace AppStudio.DataProviders.Rss
             string content = item.GetSafeElementString("encoded", NsRdfContentNamespaceUri);
             if (string.IsNullOrEmpty(content))
             {
-                content = item.GetSafeElementString("description");
+                content = item.GetSafeElementString("full-text", NsYandexContentNamespaceUri);
                 if (string.IsNullOrEmpty(content))
                 {
-                    content = item.GetSafeElementString("content");
+                    content = item.GetSafeElementString("description");
+                    if (string.IsNullOrEmpty(content))
+                    {
+                        content = item.GetSafeElementString("content");
+                    }
                 }
             }
 
